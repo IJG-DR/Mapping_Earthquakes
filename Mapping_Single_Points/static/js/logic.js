@@ -1,5 +1,5 @@
 //////////////////////////////////////////////////////////////////////
-// MODULE 13.2.4 - Create a Simple Map
+// MODULE 13.4.1 - Map a Single Point
 //////////////////////////////////////////////////////////////////////
 
 
@@ -15,7 +15,28 @@ console.log("working");
 // geographical center, where the first coordinate is latitude 
 // (40.7) and the second is longitude (-94.5). We set the zoom 
 // level of "4" on a scale 0–18.
-let map = L.map('mapid').setView([40.7, -94.5], 4);
+let map = L.map('mapid').setView([34.0522, -118.2437], 14);
+
+
+// Add a simple marker to the map for Los Angeles, California.
+// let marker = L.marker([34.0522, -118.2437]).addTo(map);
+
+// Add a circle using the L.circle method to the map for Los Angeles, California.
+// L.circle([34.0522, -118.2437], {
+    //// radius is expressed in meters
+    // radius: 100
+    // }).addTo(map);
+
+// Add a circle marker using the L.circleMarker to the map
+L.circleMarker([34.0522, -118.2437], {
+    // radius is expressed in pixels
+    radius: 300,
+    // border color black
+    color: "black",
+    // fill color yellow
+    fillColor: '#ffffa1'
+    }).addTo(map);
+
 
 
 // We create the tile layer that will be the background of our map.
@@ -38,7 +59,9 @@ let map = L.map('mapid').setView([40.7, -94.5], 4);
 // add the Leaflet layer API we want to use NOTICE DIFFERENCE WITH LINK ABOVE - THIS ONE HAS THE 'mapbox/streets-v11' INCLUDED
 // INSTEAD OF THE {id} FIELD IN THE URL.
 // TO GET THE CORRECT MAPBOX LAYER, GO TO MAPBOX DOCUMENTATION WEB-PAGE.
-let streets = L.tileLayer('https://api.mapbox.com/styles/v1/mapbox/streets-v11/tiles/{z}/{x}/{y}?access_token={accessToken}', {
+// let streets = L.tileLayer('https://api.mapbox.com/styles/v1/mapbox/streets-v11/tiles/{z}/{x}/{y}?access_token={accessToken}', {
+// Change the map layer to 'dark-v10' by changing the url
+let streets = L.tileLayer('https://api.mapbox.com/styles/v1/mapbox/dark-v10/tiles/{z}/{x}/{y}?access_token={accessToken}', {
     attribution: 'Map data &copy; <a href="https://www.openstreetmap.org/">OpenStreetMap</a> contributors, <a href="https://creativecommons.org/licenses/by-sa/2.0/">CC-BY-SA</a>, Imagery © <a href="https://www.mapbox.com/">Mapbox</a>',
     maxZoom: 18,
 
