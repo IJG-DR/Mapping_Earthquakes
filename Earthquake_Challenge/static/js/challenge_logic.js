@@ -29,6 +29,16 @@ let dark = L.tileLayer('https://api.mapbox.com/styles/v1/mapbox/dark-v10/tiles/{
 	accessToken: API_KEY
 });
 
+
+// EXTRA FOURTH LAYER
+let terrain = L.tileLayer('https://api.mapbox.com/styles/v1/mapbox/outdoors-v11/tiles/{z}/{x}/{y}?access_token={accessToken}', {
+	attribution: 'Map data &copy; <a href="https://www.openstreetmap.org/">OpenStreetMap</a> contributors, <a href="https://creativecommons.org/licenses/by-sa/2.0/">CC-BY-SA</a>, Imagery (c) <a href="https://www.mapbox.com/">Mapbox</a>',
+	maxZoom: 18,
+	accessToken: API_KEY
+});
+
+
+
 // Create the map object with center, zoom level and default layer.
 let map = L.map('mapid', {
 	center: [40.7, -94.5],
@@ -43,7 +53,8 @@ let baseMaps = {
   //////////////////////////////////////////////
   // Deliverable 3 - Add an additional map
   //////////////////////////////////////////////
-  "Dark": dark
+  "Dark": dark,
+  "Terrain": terrain
 };
 
 // 1. Add a 3rd layer group for the major earthquake data.
@@ -57,7 +68,7 @@ let tectonicPlates = new L.LayerGroup();
 ///////////////////////////////////////////////////////////////////////////////////////
 // DELIVERABLE 2 - Add a new layer group with major Earthquake Data
 ///////////////////////////////////////////////////////////////////////////////////////
-let majorEarthquakes = new L.LayerGroup();
+let majorEQ = new L.LayerGroup();
 
 
 // 2. Add a reference to the major earthquake group to the overlays object.
@@ -70,12 +81,48 @@ let overlays = {
   //////////////////////////////////////////////
   // DELIVERABLE 2 - Add major earthquake layer
   //////////////////////////////////////////////
-  "Major Earthquakes": majorEarthquakes
+  "Major Earthquakes": majorEQ
 };
 
 // Then we add a control to the map that will allow the user to change which
 // layers are visible.
 L.control.layers(baseMaps, overlays).addTo(map);
+
+
+
+
+
+//////////////////////////////////////////////
+// DELIVERABLE 1 - Add tectonic plate layer
+//////////////////////////////////////////////
+
+// Create a style for the tectonic plate lines.
+let plateStyle = {
+  color: "red",
+  weight: 2
+  }
+  
+  // Use d3.json to make a call to get our Tectonic Plate geoJSON data.
+  d3.json("https://raw.githubusercontent.com/IJG-DR/Mapping_Earthquakes/main/PB2002_boundaries.json").then(function(data) {
+    console.log(data);
+    L.geoJson(data, {
+      // We turn each feature into a circleMarker on the map.
+      style: plateStyle,
+      onEachFeature: function(features, layer) {
+          console.log(layer);
+          layer.bindPopup("Plate information: " + features.properties.Name);
+      }
+    }).addTo(tectonicPlates);
+  });
+  
+// Then we add the earthquake layer to our map.
+tectonicPlates.addTo(map);
+  
+//////////////////////////////////////////////
+  
+
+
+
 
 // Retrieve the earthquake GeoJSON data.
 d3.json("https://earthquake.usgs.gov/earthquakes/feed/v1.0/summary/all_week.geojson").then(function(data) {
@@ -128,44 +175,97 @@ d3.json("https://earthquake.usgs.gov/earthquakes/feed/v1.0/summary/all_week.geoj
   L.geoJson(data, {
     	// We turn each feature into a circleMarker on the map.
     	pointToLayer: function(feature, latlng) {
-      		console.log(data);
+      		//console.log(data);
       		return L.circleMarker(latlng);
-        },
+      },
       // We set the style for each circleMarker using our styleInfo function.
-    style: styleInfo,
-     // We create a popup for each circleMarker to display the magnitude and location of the earthquake
-     //  after the marker has been created and styled.
-     onEachFeature: function(feature, layer) {
-      layer.bindPopup("Magnitude: " + feature.properties.mag + "<br>Location: " + feature.properties.place);
-    }
+      style: styleInfo,
+      // We create a popup for each circleMarker to display the magnitude and location of the earthquake
+      //  after the marker has been created and styled.
+       onEachFeature: function(feature, layer) {
+        layer.bindPopup("<h2>Magnitude: " + feature.properties.mag 
+        + "</h2><hr>Location: " + feature.properties.place
+        + "<br>Date and time: " + Date(feature.properties.time));
+      }
   }).addTo(allEarthquakes);
 });
 
-  // Then we add the earthquake layer to our map.
-  allEarthquakes.addTo(map);
+// Then we add the earthquake layer to our map.
+allEarthquakes.addTo(map);
+
+
+
+
+//////////////////////////////////////////////
+// DELIVERABLE 2 - Add major earthquake data
+//////////////////////////////////////////////
+
 
 // 3. Retrieve the major earthquake GeoJSON data >4.5 mag for the week.
-//  d3.json().then(function(data) {
+d3.json("https://earthquake.usgs.gov/earthquakes/feed/v1.0/summary/4.5_week.geojson").then(function(data) {
 
-// 4. Use the same style as the earthquake data.
+  // 4. Use the same style as the earthquake data.
+  function styleInfo(feature) {
+    return {
+      opacity: 1,
+      fillOpacity: 1,
+      fillColor: getColor(feature.properties.mag),
+      color: "#000000",
+      radius: getRadius(feature.properties.mag),
+      stroke: true,
+      weight: 0.5
+    };
+  }
 
+  // 5. Change the color function to use three colors for the major earthquakes based on the magnitude of the earthquake.
+  function getColor(magnitude) {
+    if (magnitude > 6) {
+      return "maroon";
+    }
+    if (magnitude > 5) {
+      return "#ea2c2c";
+    }
+    return "#ea822c";
+  }
 
-// 5. Change the color function to use three colors for the major earthquakes based on the magnitude of the earthquake.
+  // 6. Use the function that determines the radius of the earthquake marker based on its magnitude.
+  function getRadius(magnitude) {
+    if (magnitude === 0) {
+      return 1;
+    }
+    return magnitude * 4;
+  }
 
+  // 7. Creating a GeoJSON layer with the retrieved data that adds a circle to the map 
+  // sets the style of the circle, and displays the magnitude and location of the earthquake
+  //  after the marker has been created and styled.
+  L.geoJson(data, {
+      // We turn each feature into a circleMarker on the map.
+      pointToLayer: function(feature, latlng) {
+          console.log(data);
+          return L.circleMarker(latlng);
+      },
+      // We set the style for each circleMarker using our styleInfo function.
+      style: styleInfo,
+      // We create a popup for each circleMarker to display the magnitude and location of the earthquake
+      //  after the marker has been created and styled.
+      onEachFeature: function(feature, layer) {
+        layer.bindPopup("<h2>Magnitude: " + feature.properties.mag 
+        + "</h2><hr>Location: " + feature.properties.place
+        + "<br>Date and time: " + Date(feature.properties.time));
+      }
+  }).addTo(majorEQ);
 
-// 6. Use the function that determines the radius of the earthquake marker based on its magnitude.
-
-
-// 7. Creating a GeoJSON layer with the retrieved data that adds a circle to the map 
-// sets the style of the circle, and displays the magnitude and location of the earthquake
-//  after the marker has been created and styled.
-//    L.geoJson(, {
-    
-//    });
-// 8. Add the major earthquakes layer to the map.
+  // 8. Add the major earthquakes layer to the map.
+  majorEQ.addTo(map);
 
 // 9. Close the braces and parentheses for the major earthquake data.
-//   });
+});
+
+//////////////////////////////////////////////
+
+
+
 
 // Here we create a legend control object.
 let legend = L.control({
@@ -189,7 +289,7 @@ legend.onAdd = function() {
 
   // Looping through our intervals to generate a label with a colored square for each interval.
   for (var i = 0; i < magnitudes.length; i++) {
-    console.log(colors[i]);
+    //console.log(colors[i]);
     div.innerHTML +=
       "<i style='background: " + colors[i] + "'></i> " +
       magnitudes[i] + (magnitudes[i + 1] ? "&ndash;" + magnitudes[i + 1] + "<br>" : "+");
@@ -199,32 +299,3 @@ legend.onAdd = function() {
 
 // Finally, we our legend to the map.
 legend.addTo(map);
-
-//////////////////////////////////////////////
-// DELIVERABLE 1 - Add tectonic plate layer
-//////////////////////////////////////////////
-
-// Create a style for the tectonic plate lines.
-let plateStyle = {
-color: "red",
-weight: 2
-}
-
-// Use d3.json to make a call to get our Tectonic Plate geoJSON data.
-d3.json("https://github.com/fraxen/tectonicplates/blob/master/GeoJSON/PB2002_boundaries.json").then(function(data) {
-  console.log(data);
-  L.geoJson(data, {
-    // We turn each feature into a circleMarker on the map.
-    style: plateStyle,
-    onEachFeature: function(feature, layer) {
-        console.log(layer);
-        layer.bindPopup("Plate information: " + features.properties.Name);
-    }
-  });
-}).addTo(tectonicPlates);
-
-// Then we add the earthquake layer to our map.
-tectonicPlates.addTo(map);
-    
-//  });
-//});
